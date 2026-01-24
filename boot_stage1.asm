@@ -1,7 +1,7 @@
 ; The Boot Sequence is:
 ;   - Firmware runs and send POST which ensures all electrical devices are OK.
 ;   - Firmware runs BIOS which is code that sits directly on the motherboard and meant to be the entry point of PC.
-;   - BIOS searches the first 512 bytes of every drive, and checks if they end with the magic number: 0x55AA (written big endian).
+;   - BIOS searches the first 512 bytes of every drive, and checks if they end with the magic number: 0x55AA
 ;   - BIOS copies these 512 bytes to address 0x7C00 and jumps to it
 ;   - This is where we are - stage 1.
 
@@ -27,7 +27,6 @@ main:
 	mov ss, ax				; sp would be regarded at SS:SP
 	mov sp, 0x7c00
 	mov bp, 0x7c00             
-	sti
 	
 	jmp load_stage2
 
@@ -37,7 +36,7 @@ load_stage2:
     mov ah, 0x42
     int 0x13
     jc short error
-
+	jmp 0x7e00 				; Jump into where the ram was written to
 
 ; Defining DAP for BIOS Interrupt 13h which reads from disk and writes to RAM
 align 4                 ; align on 4-byte boundary just to be safe
