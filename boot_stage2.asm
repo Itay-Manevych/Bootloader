@@ -1,5 +1,4 @@
 [BITS 16]
-[ORG 0x7E00]
 
 %define NEWLINE 0x0D, 0x0A
 
@@ -73,9 +72,9 @@ msg_stage2 db "[+] BOOTING", NEWLINE, "Loading Stage 1", NEWLINE, "Loading Stage
 
 [BITS 32]
 entry_protected_mode:
-    cld                         ; Clear the direction flag
+    cld                                 ; Clear the direction flag
 
-    cli                         ; Ensure interrupts are disabled
+    cli                                 ; Ensure interrupts are disabled
 
     mov ax, GDT_DATA_SEGMENT_SELECTOR   ; Making all segments point to the gdt entry of the data segment (flat memory model)
     mov ds, ax
@@ -84,14 +83,9 @@ entry_protected_mode:
     mov fs, ax
     mov gs, ax
 
-    mov esp, 0x90000            ; Setting the stack pointers
+    mov esp, 0x90000                    ; Setting the stack pointers
     mov ebp, esp
 
-                                ; Print ok using the VGA Buffer which starts at 0xB8000
-    mov word [0xB8000], 0x0F4F  ; 'O'
-    mov word [0xB8002], 0x0F4B  ; 'K'
-
-finish:
-    hlt
-    jmp finish
+    extern boot_stage3		            ; Enter stage 3
+    call boot_stage3
 
