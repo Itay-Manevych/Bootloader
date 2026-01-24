@@ -5,20 +5,18 @@
 ;   - BIOS copies these 512 bytes to address 0x7C00 and jumps to it
 ;   - This is where we are - stage 1.
 
-[BITS 16]                 ; setting 16-bit mode
-[ORG 0x7C00]              ; tells the compiler to start from 0x7C00
+[BITS 16]                 ; Setting 16-bit mode
+[ORG 0x7C00]              ; Tells the compiler to start from 0x7C00
 
 start:
-	; The calculation in memory we have is CS:Offset, which does (CS * 16) + Offset.
-	; We already have ORG 0x7C00, which means we start at 0x7c00, and the Offset would grow incrementally
-	; Therfore, we want to zero initliaze CS (by far jumping)
-	jmp 0x0000:main
+	jmp 0x0000:main			; The calculation in memory we have is CS:Offset, which does (CS * 16) + Offset.
+							; We already have ORG 0x7C00, which means we start at 0x7c00, and the Offset would grow incrementally
+							; Therfore, we want to zero initliaze CS (by far jumping)
 
 main:
-	xor ax, ax				
-	mov ds, ax				; When we pass DAP we save it in SI, and SI is at DS:SI
-							; so we zero initliaze for the same reason we did in start 
-
+				
+	xor ax, ax				; When we pass DAP we save it in SI, and SI is at DS:SI
+	mov ds, ax				; so we zero initliaze for the same reason we did in start 
 	mov es, ax
 	mov gs, ax
 	
@@ -31,7 +29,7 @@ main:
 	jmp load_stage2
 
 load_stage2:
-    ; BIOS stores the current boot driveID in dl - No need to set it ourselves.
+    						; BIOS stores the current boot driveID in dl - No need to set it ourselves.
 	mov si, DAP 			; DAP - Data Address Packet, defined later
     mov ah, 0x42
     int 0x13
@@ -39,7 +37,7 @@ load_stage2:
 	jmp 0x7E00 				; Jump into where the ram was written to
 
 ; Defining DAP for BIOS Interrupt 13h which reads from disk and writes to RAM
-align 4                 ; align on 4-byte boundary just to be safe
+align 4                 ; Align on 4-byte boundary just to be safe
 DAP:
     db 0x10             ; Packet Size: this tells the BIOS what version of DAP struct we're using
     db 0x00             ; Padding byte: Needs to be set to 0 if DAP runs in a loop
@@ -53,7 +51,7 @@ DAP:
                         ; the first one contains this file, the next sector will contain stage 2.
 
 error:
-	jmp $				; do an infinite loop so cpu wont read garbage instructions and triple-fault
+	jmp $				; Do an infinite loop so cpu wont read garbage instructions and triple-fault
 
 ; Enlarge the file so it would be 512 bytes, 
 ; and the last 2 bytes are reserved for the magic number 0x55AA (little endian here)
