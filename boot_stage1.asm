@@ -10,7 +10,7 @@
 
 start:
 	; The calculation in memory we have is CS:Offset, which does (CS * 16) + Offset.
-	; We already have ORG 0x7c00, which means we start at 0x7c00, and the Offset would grow incrementally
+	; We already have ORG 0x7C00, which means we start at 0x7c00, and the Offset would grow incrementally
 	; Therfore, we want to zero initliaze CS (by far jumping)
 	jmp 0x0000:main
 
@@ -25,8 +25,8 @@ main:
 							; Initliaze stuff for the Stack:
 	cli						; remove all interrupts as they push stuff into the stack and would cause undefined behaviour
 	mov ss, ax				; sp would be regarded at SS:SP
-	mov sp, 0x7c00
-	mov bp, 0x7c00             
+	mov sp, 0x7C00
+	mov bp, 0x7C00             
 	
 	jmp load_stage2
 
@@ -36,7 +36,7 @@ load_stage2:
     mov ah, 0x42
     int 0x13
     jc short error
-	jmp 0x7e00 				; Jump into where the ram was written to
+	jmp 0x7E00 				; Jump into where the ram was written to
 
 ; Defining DAP for BIOS Interrupt 13h which reads from disk and writes to RAM
 align 4                 ; align on 4-byte boundary just to be safe
@@ -46,7 +46,7 @@ DAP:
     dw 0x40             ; Count: Number of sectors to read (64 sectors - could be changed later on)
 
                         ; RAM address to write to is represented by (Segment * 16) + Offset
-    dw 0x7e00           ; Offset - 0x700 which is directly after 0x7c00
+    dw 0x7E00           ; Offset - 0x700 which is directly after 0x7C00
     dw 0x0000           ; Segment
 
     dq 0x00000001       ; Disk sector to read from, each sector is 512 bytes.

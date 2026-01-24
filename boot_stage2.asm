@@ -1,10 +1,12 @@
 [BITS 16]
 [ORG 0x7E00]
 
+%define CRLF 0x0D, 0x0A
+
 start:
     xor ax, ax
     mov ds, ax
-    mov si, msg
+    mov si, print_message
 
     print_string:
         mov al, [si]
@@ -18,4 +20,4 @@ start:
     finish:
         jmp $
 
-msg db "Hello from stage2!", 0
+print_message db "[+] BOOTING", CRLF, "Loading Stage 1", CRLF, "Loading Stage 2....", CRLF, 0
