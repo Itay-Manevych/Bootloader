@@ -11,10 +11,10 @@ start:
     print_string:
         mov al, [si]
         test al, al
-        jz finish        
+        jz finish
         mov ah, 0x0E
         int 0x10
-        inc si 
+        inc si
         jmp print_string
 
     finish:
