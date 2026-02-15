@@ -1,4 +1,6 @@
+#if defined(__clang__) || defined(__GNUC__)
 __asm__(".code32\n");
+#endif
 
 #define VGA_BUFFER 0xB8000
 #define WHITE_ON_BLACK 0x05
