@@ -6,7 +6,7 @@
 
 #include <cstdint>
 #include <cstddef>
-#include "boot_stage3.c"
+#include "vga.c"
 
 #ifndef TYPES_H
 #define TYPES_H
@@ -62,6 +62,7 @@ void initliaze_pdt_table(PageTable* pdt)
         qword base = PAGE_COVERAGE * i;
         fill_identity_pt(pt, base);
     }
+    print_string("finished mapping virtual to physical addresses...");
 }
 
 void fill_identity_pt(PageTable* pt, qword base) 
