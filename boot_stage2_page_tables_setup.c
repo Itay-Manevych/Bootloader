@@ -23,6 +23,8 @@ typedef struct
 
 qword next_free_address = BASE_PAGE_TABLES_ADDRESS;
 
+void fill_identity_pt(PageTable* pt, qword base);
+
 void* memset_(void* address, int value, size_t length) 
 {
     byte* p = (byte*)address;
