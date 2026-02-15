@@ -10,18 +10,19 @@ STAGE_2_ORG="0x7E00"
 STAGE_3="boot_stage3"
 PADDING="padding"
 OS_IMG="os-img"
+MAX_LOAD_BYTES=$((64 * 512)) # 64 sectors * 512 bytes per sector - thats what we defined in the DAP 
 
-rm -rf $BIN
-mkdir $BIN
-
-rm -rf $OBJ
-mkdir $OBJ
-
-rm -rf $EXEC
-mkdir $EXEC
+rm -rf "$BIN" "$OBJ" "$EXEC"
+mkdir "$BIN" "$OBJ" "$EXEC"
 
 # make stage1 a flat binary, since it will be loaded by the BIOS and must be exactly 512 bytes.
 nasm -f bin "$STAGE_1.asm" -o "$BIN$STAGE_1.bin"
+
+STAGE_1_SIZE=$(stat -c %s "$BIN$STAGE_1.bin")
+if [ "$STAGE_1_SIZE" -ne 512 ]; then
+    echo "Error: Stage 1 size is not exactly 512 bytes!"
+    exit 1
+fi
 
 # elf is needed here to resolve addresses, and elf supports symbols and relocations.
 nasm -f elf32 "$STAGE_2.asm" -o "$OBJ$STAGE_2.o"
@@ -30,13 +31,19 @@ nasm -f elf32 "$STAGE_2.asm" -o "$OBJ$STAGE_2.o"
 # We use -ffreestanding to tell the compiler that we are not using any standard library, and -m32 to generate 32-bit code.
 clang --target=i386-elf -ffreestanding -m32 -g -c "$STAGE_3.c" -o "$OBJ$STAGE_3.o"
 
-# Now we need to link stage 2 and stage 3 together. 
+# Now we need to link stage2+stage3 as if they will be loaded into RAM at 0x7E00 (by stage1),
 # We use lld for this, since it is a modern linker that supports the latest features of the ELF format.
-# We also specify the entry point of stage 2, which is where the BIOS will jump to after loading stage 1.
+# we use -Ttext so all symbol addresses (e.g., boot_stage3, GDT pointers, strings) are correct.
 ld.lld -m elf_i386 --image-base=0 -Ttext $STAGE_2_ORG -o "$EXEC$STAGE_3.elf" "$OBJ$STAGE_2.o" "$OBJ$STAGE_3.o"
 
-# Now we need to convert the linked ELF file to a flat binary, since that is what the BIOS will load into memory.
+# Now we need to convert the linked ELF file to a flat binary, since that is what stage1 will load into memory (using BIOS disk services).
 llvm-objcopy -O binary "$EXEC$STAGE_3.elf" "$BIN$STAGE_3.bin"
+
+STAGE_2_3_SIZE=$(stat -c %s "$BIN$STAGE_3.bin")
+if [ "$STAGE_2_3_SIZE" -gt "$MAX_LOAD_BYTES" ]; then
+    echo "Error: Stage 2 and 3 combined size exceeds $MAX_LOAD_BYTES bytes! Time to load more sectors :)"
+    exit 1
+fi
 
 dd if=/dev/zero of="$BIN$PADDING.bin" bs=1024 count=32
 
