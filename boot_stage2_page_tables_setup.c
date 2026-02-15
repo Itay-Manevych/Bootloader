@@ -6,7 +6,7 @@
 
 #include <cstdint>
 #include <cstddef>
-#include "vga.c"
+#include "vga.h"
 #include "types.h"
 
 #define MEMORY_SIZE 0x40000000 // 1GiB
