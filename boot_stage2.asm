@@ -86,6 +86,7 @@ entry_protected_mode:
     mov esp, 0x90000                    ; Setting the stack pointers
     mov ebp, esp
 
-    extern boot_stage3		            ; Enter stage 3
-    call boot_stage3
+    ;extern boot_stage3		            ; Enter stage 3
+    ;call boot_stage3
+    
 
