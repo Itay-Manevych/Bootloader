@@ -7,16 +7,7 @@
 #include <cstdint>
 #include <cstddef>
 #include "vga.c"
-
-#ifndef TYPES_H
-#define TYPES_H
-
-typedef uint8_t byte;
-typedef uint16_t word;
-typedef uint32_t dword;
-typedef uint64_t qword;
-
-#endif
+#include "types.h"
 
 #define MEMORY_SIZE 0x40000000 // 1GiB
 #define PAGE_SIZE 0x1000 // 4KiB
