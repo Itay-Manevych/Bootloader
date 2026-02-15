@@ -6,7 +6,7 @@
 #define WHITE_ON_BLACK 0x05
 #define PREVIOUS_STAGES_LINES_USED 12
 
-size_t previous_lines_used = PREVIOUS_STAGES_LINES_USED;
+int previous_lines_used = PREVIOUS_STAGES_LINES_USED;
 
 void print_char(char c, int col, int row) {
     volatile char* video = (volatile char*)VGA_BUFFER;
@@ -17,9 +17,11 @@ void print_char(char c, int col, int row) {
 
 void print_string(const char* str) {
     int col = 0;
+    int row = previous_lines_used;
     while (*str) {
-        print_char(*str, col, previous_lines_used++);
+        print_char(*str, col, row);
         col++;
         str++;
     }
+    previous_lines_used;
 }
