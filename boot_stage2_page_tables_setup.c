@@ -68,7 +68,7 @@ void fill_identity_pt(PageTable* pt, qword base)
     }
 }
 
-dword pml4_phys = 0;
+dword pml4_table_physical = 0;
 
 void setup_page_tables() 
 {
@@ -84,5 +84,5 @@ void setup_page_tables()
 
     initliaze_pdt_table(pdt);
 
-    pml4_phys = (dword)(uintptr_t)pml4;
+    pml4_table_physical = (dword)(uintptr_t)pml4;
 }

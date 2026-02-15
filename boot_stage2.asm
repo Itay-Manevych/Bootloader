@@ -4,7 +4,8 @@
 
 ; Indexes for the selectors once we move into protected mode - each selector is 8 bytes
 %define GDT_DATA_SEGMENT_SELECTOR 0x08 
-%define GDT_CODE_SEGMENT_SELECTOR 0x10
+%define GDT_CODE32_SEGMENT_SELECTOR 0x10
+%define GDT_CODE64_SEGMENT_SELECTOR 0x18
 
 start:
     xor ax, ax
@@ -37,9 +38,9 @@ prepare_protected_mode:
     or eax, 1
     mov cr0, eax
 
-    jmp GDT_CODE_SEGMENT_SELECTOR:entry_protected_mode  ; The leap of faith - jumping into protected mode! 
-                                                        ; in protected mode, the segements are basically indexes inside the GDT
-                                                        ; so, we far jump which changes the code segement into the index we defined earlier
+    jmp GDT_CODE32_SEGMENT_SELECTOR:entry_protected_mode  ; The leap of faith - jumping into protected mode! 
+                                                          ; in protected mode, the segements are basically indexes inside the GDT
+                                                          ; so, we far jump which changes the code segement into the index we defined earlier
 
 
 align 8                         ; Align for 8 bytes for safety                
@@ -55,13 +56,22 @@ ENTRY_DATA_SEGMENT:
     db 0b11000000 | 0b00001111  ; 0b00001111 = the upper part limit, 0b11000000 = flags
     db 0x00                     ; Upper part base
 
-ENTRY_CODE_SEGMENT:
+ENTRY_CODE32_SEGMENT:
     dw 0xFFFF                   ; Lower part limit
     dw 0x0000                   ; Lower part base
     db 0x00                     ; Middle part base
     db 0b10011010               ; Access byte
     db 0b11000000 | 0b00001111  ; 0b00001111 = the upper part limit, 0b11000000 = flags
     db 0x00                     ; Upper part base
+
+ENTRY_CODE64_SEGMENT:
+    dw 0xFFFF                   ; Lower part limit
+    dw 0x0000                   ; Lower part base
+    db 0x00                     ; Middle part base
+    db 0b10011010               ; Access byte
+    db 0b10100000 | 0b00001111  ; 0b00001111 = the upper part limit, 0b10100000 = flags
+    db 0x00                     ; Upper part base
+
 GDT_END:
 
 GDT_DESCRIPTION:
@@ -71,6 +81,9 @@ GDT_DESCRIPTION:
 msg_stage2 db "[+] BOOTING", NEWLINE, "Loading Stage 1", NEWLINE, "Loading Stage 2....", NEWLINE, 0
 
 [BITS 32]
+; MSR - Model Specific Register, 0xC0000080 is its index
+%define MSR_LONG_MODE 0xC0000080 
+
 entry_protected_mode:
     cld                                 ; Clear the direction flag
 
@@ -86,7 +99,30 @@ entry_protected_mode:
     mov esp, 0x90000                    ; Setting the stack pointers
     mov ebp, esp
 
-    ;extern boot_stage3		            ; Enter stage 3
-    ;call boot_stage3
-    
+preapre_long_mode:
 
+    extern setup_page_tables
+    extern pml4_table_physical
+
+    call setup_page_tables         ; Build the page tables in RAM
+    
+    mov eax, [pml4_table_physical]        ; Giving cr3 the physical address inside the RAM of PML4 Table
+    mov cr3, eax
+
+    mov eax, cr4                ; Enabling PAE (Physical Address Extenstion) Paging, without it the paging structure would be wrong
+    or  eax, (1 << 5)           ; PAE is the bit #5 (counting from 0)
+    mov cr4, eax
+
+    mov ecx, MSR_LONG_MODE     ; Preapre long mode
+    rdmsr                      ; Read msr into EDX:EAX
+    or  eax, (1 << 8)          ; Set the long mode bit on, which is the bit #8 (counting from 0)
+    wrmsr                      ; Write back to msr
+
+    mov eax, cr0               ; Enable Long Mode!
+    or  eax, (1 << 31)         ; Set PG on
+    mov cr0, eax
+
+    jmp GDT_CODE64_SEGMENT_SELECTOR:entry_long_mode ; The leap of faith again!
+
+[BITS 64]
+entry_long_mode:

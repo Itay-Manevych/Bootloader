@@ -3,8 +3,7 @@
 
 void boot_stage3()
 {
-    print_string("Welcome to C (Protected Mode)!");
-    print_string("Next stop: Long Mode (64-bit)...");
+    print_string("Welcome to C (Long Mode)!!!!");
     // Hang forever
     while(1);
 }
