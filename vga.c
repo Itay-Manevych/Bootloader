@@ -18,10 +18,12 @@ void print_char(char c, int col, int row) {
 void print_string(const char* str) {
     int col = 0;
     int row = previous_lines_used;
+
     while (*str) {
         print_char(*str, col, row);
         col++;
         str++;
     }
+    
     previous_lines_used++;
 }

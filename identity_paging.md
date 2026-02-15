@@ -1,5 +1,6 @@
-4-Level Paging (Identity Map 0 → 1GiB)
+# Paging visualization of the 4-Level Paging (Identity Map 0 → 1GiB)
 
+```text
 Virtual Address
       |
       v
@@ -60,3 +61,4 @@ Zoom: PT1 (next 2MiB)
 +-----------------------+
 
 Coverage: 0x00200000 → 0x003FFFFF
+```
