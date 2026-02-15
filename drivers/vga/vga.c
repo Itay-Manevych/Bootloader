@@ -1,7 +1,5 @@
 #include "vga.h"
 
-#include <cstdint>
-
 #define VGA_BUFFER 0xB8000
 #define WHITE_ON_BLACK 0x05
 #define PREVIOUS_STAGES_LINES_USED 12
@@ -24,6 +22,5 @@ void print_string(const char* str) {
         col++;
         str++;
     }
-    
     previous_lines_used++;
 }

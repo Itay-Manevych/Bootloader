@@ -1,4 +1,5 @@
 [BITS 16]
+global stage2_entry
 
 %define NEWLINE 0x0D, 0x0A
 
@@ -7,9 +8,44 @@
 %define GDT_CODE32_SEGMENT_SELECTOR 0x10
 %define GDT_CODE64_SEGMENT_SELECTOR 0x18
 
-start:
+stage2_entry:
+    jmp load_kernel
+
+load_kernel:
     xor ax, ax
     mov ds, ax
+
+    mov si, DAP
+    mov ah, 0x42
+    int 0x13            ; BIOS Interrupt in order to load the kernel into memory.
+    jc error            ; CF==1 means that an error has occurred.
+    jmp stage_2_start
+
+; Defining DAP for BIOS Interrupt 13h which reads from disk and loades kernel to ram
+; because after we jump to protected/long mode - there are no more Bios interrups!
+align 4                 ; Align on 4-byte boundary just to be safe
+DAP:
+    db 0x10             ; Packet Size: this tells the BIOS what version of DAP struct we're using
+    db 0x00             ; Padding byte: Needs to be set to 0 if DAP runs in a loop
+    dw 0x40             ; Count: Number of sectors to read (64 sectors - could be changed later on)
+
+                        ; RAM address to write to is represented by (Segment * 16) + Offset
+                        ; We load the kernel to 0x10000 which is 64kib
+                        ; therefore we need to make 0x10000 / 0x10 (16) in the segment
+    dw 0x0000          
+    dw 0x1000           ; Segment
+
+    dq 0x00000041       ; Disk sector to read from, each sector is 512 bytes.
+                        ; in boot_stage1.asm we loaded boot_stage1.asm into the first sector 
+                        ; after that, we have 64 sectors (from sector 1 to sector 64)
+                        ; therefore, we will read the kernel from sector 65!
+
+error:
+    jmp $               ; make qemu keep running
+
+; real start after we actually loaded the kernel into memory!
+; the kernel bytes in ram are now 0x00100000
+stage_2_start:
     mov si, msg_stage2
 
 print_string:
@@ -100,7 +136,6 @@ entry_protected_mode:
     mov ebp, esp
 
 preapre_long_mode:
-
     extern setup_page_tables
     extern pml4_table_physical
 
@@ -122,7 +157,16 @@ preapre_long_mode:
     or  eax, (1 << 31)         ; Set PG on
     mov cr0, eax
 
-    jmp GDT_CODE64_SEGMENT_SELECTOR:entry_long_mode ; The leap of faith again!
+    jmp GDT_CODE64_SEGMENT_SELECTOR:entry_long_mode ; The leap of faith again :)
 
 [BITS 64]
+%define KERNEL_LOAD_ADDRESS 0x00010000
+
 entry_long_mode:
+    cld                                 ; Clear the direction flag
+
+    cli                                 ; Ensure interrupts are disabled
+
+    mov rsp, 0x90000
+    and rsp, -16                        ; Clear the bottom 4 bits of RSP which rounds it down to a multiple of 16
+    jmp KERNEL_LOAD_ADDRESS

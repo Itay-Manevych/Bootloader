@@ -1,53 +1,117 @@
 #!/bin/bash
+set -euo pipefail
 
-BIN="./bin/"
-OBJ="./object/"
-EXEC="./exec/"
-
-STAGE_1="boot_stage1"
-STAGE_2="boot_stage2"
-STAGE_2_ORG="0x7E00"
-STAGE_3="boot_stage3"
-PADDING="padding"
-OS_IMG="os-img"
-MAX_LOAD_BYTES=$((64 * 512)) # 64 sectors * 512 bytes per sector - thats what we defined in the DAP 
+BIN="./bin"
+OBJ="./object"
+EXEC="./exec"
+KOBJ="./kernel"          # you asked to put kernel.o here
 
 rm -rf "$BIN" "$OBJ" "$EXEC"
-mkdir "$BIN" "$OBJ" "$EXEC"
+mkdir -p "$BIN" "$OBJ" "$EXEC" "$KOBJ"
 
-# make stage1 a flat binary, since it will be loaded by the BIOS and must be exactly 512 bytes.
-nasm -f bin "$STAGE_1.asm" -o "$BIN$STAGE_1.bin"
+# -------------------------
+# Fixed layout constants
+# -------------------------
+STAGE2_LOAD_SECTORS=64
+STAGE2_BYTES=$((STAGE2_LOAD_SECTORS * 512))   # 32768 bytes
+KERNEL_LBA=65                                  # stage1=0, stage2=1..64, kernel starts at 65
 
-STAGE_1_SIZE=$(stat -c %s "$BIN$STAGE_1.bin")
-if [ "$STAGE_1_SIZE" -ne 512 ]; then
-    echo "Error: Stage 1 size is not exactly 512 bytes!"
-    exit 1
+echo "[*] Stage2 fixed size: ${STAGE2_LOAD_SECTORS} sectors (${STAGE2_BYTES} bytes)"
+echo "[*] Kernel fixed LBA:  ${KERNEL_LBA} (0x41)"
+
+# -------------------------
+# Stage 1 (boot sector)
+# -------------------------
+nasm -f bin boot/boot_stage1.asm -o "$BIN/stage1.bin"
+
+STAGE1_SIZE=$(stat -c %s "$BIN/stage1.bin")
+if [ "$STAGE1_SIZE" -ne 512 ]; then
+  echo "Error: stage1.bin must be exactly 512 bytes (got $STAGE1_SIZE)"
+  exit 1
 fi
 
-# elf is needed here to resolve addresses, and elf supports symbols and relocations.
-nasm -f elf32 "$STAGE_2.asm" -o "$OBJ$STAGE_2.o"
+# -------------------------
+# Stage 2 (ELF32 -> flat bin), loaded at 0x7E00
+# -------------------------
+nasm -f elf32 boot/boot_stage2.asm -o "$OBJ/stage2.o"
 
-# stage 3 is written in C, so we need to compile it to an object file. 
-# We use -ffreestanding to tell the compiler that we are not using any standard library, and -m32 to generate 32-bit code.
-clang --target=i386-elf -ffreestanding -m32 -g -c "$STAGE_3.c" -o "$OBJ$STAGE_3.o"
+# headers:
+# - stage2 C includes "drivers/vga/vga.h" OR "vga.h"
+# safest: allow project-root includes
+CINC=(-I. -Idrivers/vga -Icommon)
 
-# Now we need to link stage2+stage3 as if they will be loaded into RAM at 0x7E00 (by stage1),
-# We use lld for this, since it is a modern linker that supports the latest features of the ELF format.
-# we use -Ttext so all symbol addresses (e.g., boot_stage3, GDT pointers, strings) are correct.
-ld.lld -m elf_i386 --image-base=0 -Ttext $STAGE_2_ORG -o "$EXEC$STAGE_3.elf" "$OBJ$STAGE_2.o" "$OBJ$STAGE_3.o"
+clang --target=i386-elf -ffreestanding -m32 \
+  -fno-pic -fno-stack-protector -nostdlib "${CINC[@]}" \
+  -c boot/boot_stage2_page_tables_setup.c -o "$OBJ/pt32.o"
 
-# Now we need to convert the linked ELF file to a flat binary, since that is what stage1 will load into memory (using BIOS disk services).
-llvm-objcopy -O binary "$EXEC$STAGE_3.elf" "$BIN$STAGE_3.bin"
+clang --target=i386-elf -ffreestanding -m32 \
+  -fno-pic -fno-stack-protector -nostdlib "${CINC[@]}" \
+  -c drivers/vga/vga.c -o "$OBJ/vga32.o"
 
-STAGE_2_3_SIZE=$(stat -c %s "$BIN$STAGE_3.bin")
-if [ "$STAGE_2_3_SIZE" -gt "$MAX_LOAD_BYTES" ]; then
-    echo "Error: Stage 2 and 3 combined size exceeds $MAX_LOAD_BYTES bytes! Time to load more sectors :)"
-    exit 1
+# Link stage2 to run at 0x7E00, entry is stage2_entry
+ld.lld -m elf_i386 --image-base=0 -Ttext 0x7E00 -e stage2_entry \
+  -o "$EXEC/stage2.elf" \
+  "$OBJ/stage2.o" "$OBJ/pt32.o" "$OBJ/vga32.o"
+
+llvm-objcopy -O binary "$EXEC/stage2.elf" "$BIN/stage2.bin"
+
+# Enforce stage2 <= 64 sectors and pad to exactly 64 sectors
+STAGE2_SIZE=$(stat -c %s "$BIN/stage2.bin")
+if [ "$STAGE2_SIZE" -gt "$STAGE2_BYTES" ]; then
+  echo "Error: stage2.bin is too big (${STAGE2_SIZE} bytes). Must be <= ${STAGE2_BYTES} bytes."
+  exit 1
 fi
 
-dd if=/dev/zero of="$BIN$PADDING.bin" bs=1024 count=32
+PAD_BYTES=$((STAGE2_BYTES - STAGE2_SIZE))
+if [ "$PAD_BYTES" -gt 0 ]; then
+  dd if=/dev/zero bs=1 count="$PAD_BYTES" status=none >> "$BIN/stage2.bin"
+fi
+echo "[*] stage2.bin: ${STAGE2_SIZE} bytes -> padded to ${STAGE2_BYTES} bytes"
 
-# Now stage 2 and 3 are combined
-cat "$BIN$STAGE_1.bin" "$BIN$STAGE_3.bin" "$BIN$PADDING.bin" > "$BIN$OS_IMG.bin"
+# -------------------------
+# Kernel (ELF64 -> flat bin)
+# Must match stage2 loader target:
+# your stage2 loads kernel at segment 0x1000 offset 0 => 0x00010000
+# -------------------------
+KERNEL_ORG=0x00010000
+KERNEL_PAD_SECTORS=64
+KERNEL_PAD_BYTES=$((KERNEL_PAD_SECTORS * 512))
 
-qemu-system-x86_64 -drive format=raw,file="$BIN$OS_IMG.bin"
+nasm -f elf64 kernel/kernel_entry.asm -o "$OBJ/kentry.o"
+
+# compile kernel.c into kernel/kernel.o (as you asked)
+clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
+  -fno-pic -fno-stack-protector -nostdlib "${CINC[@]}" \
+  -c kernel/kernel.c -o "$KOBJ/kernel.o"
+
+# vga for 64-bit goes to object/ (fine)
+clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
+  -fno-pic -fno-stack-protector -nostdlib "${CINC[@]}" \
+  -c drivers/vga/vga.c -o "$OBJ/vga64.o"
+
+ld.lld -m elf_x86_64 --image-base=0 -Ttext "$KERNEL_ORG" -e kernel_entry \
+  -o "$EXEC/kernel.elf" \
+  "$OBJ/kentry.o" "$KOBJ/kernel.o" "$OBJ/vga64.o"
+
+llvm-objcopy -O binary "$EXEC/kernel.elf" "$BIN/kernel.bin"
+
+# Pad kernel to exactly 64 sectors (so stage2 can safely read 64)
+KERNEL_SIZE=$(stat -c %s "$BIN/kernel.bin")
+if [ "$KERNEL_SIZE" -gt "$KERNEL_PAD_BYTES" ]; then
+  echo "Error: kernel.bin too big for ${KERNEL_PAD_SECTORS} sectors ($KERNEL_SIZE > $KERNEL_PAD_BYTES)"
+  exit 1
+fi
+
+dd if=/dev/zero bs=1 count=$((KERNEL_PAD_BYTES - KERNEL_SIZE)) status=none >> "$BIN/kernel.bin"
+echo "[*] kernel.bin: ${KERNEL_SIZE} bytes -> padded to ${KERNEL_PAD_BYTES} bytes"
+
+# -------------------------
+# Build raw image: stage1 | stage2(64 sectors padded) | kernel(64 sectors padded)
+# -------------------------
+cat "$BIN/stage1.bin" "$BIN/stage2.bin" "$BIN/kernel.bin" > "$BIN/os-img.bin"
+
+IMG_SIZE=$(stat -c %s "$BIN/os-img.bin")
+IMG_SECTORS=$(( (IMG_SIZE + 511) / 512 ))
+echo "[*] os-img.bin: ${IMG_SIZE} bytes (${IMG_SECTORS} sectors)"
+
+qemu-system-x86_64 -drive format=raw,file="$BIN/os-img.bin"

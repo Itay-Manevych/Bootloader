@@ -14,7 +14,6 @@ start:
 							; Therfore, we want to zero initliaze CS (by far jumping)
 
 main:
-				
 	xor ax, ax				; When we pass DAP we save it in SI, and SI is at DS:SI
 	mov ds, ax				; so we zero initliaze for the same reason we did in start 
 	mov es, ax
@@ -34,7 +33,7 @@ load_stage2:
     mov ah, 0x42
     int 0x13
     jc short error
-	jmp 0x7E00 				; Jump into where the ram was written to
+	jmp 0x0000:0x7E00 				; Jump into where the ram was written to
 
 ; Defining DAP for BIOS Interrupt 13h which reads from disk and writes to RAM
 align 4                 ; Align on 4-byte boundary just to be safe

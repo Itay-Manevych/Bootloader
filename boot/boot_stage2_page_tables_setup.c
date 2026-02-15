@@ -4,16 +4,16 @@
 // Since we are going to be in 64bit mode, each entry will be 8 bytes, so each page table will be 4KiB / 8 = 512 entries.
 // the table hierarchy are PML4T->PDPT->PDT->PT->Physical Memory
 
-#include <cstdint>
-#include <cstddef>
-#include "vga.h"
-#include "types.h"
+#include <stdint.h>
+#include <stddef.h>
+#include "drivers/vga/vga.h"
+#include "common/types.h"
 
 #define MEMORY_SIZE 0x40000000 // 1GiB
 #define PAGE_SIZE 0x1000 // 4KiB
 #define ENTRIES PAGE_SIZE / 8
 #define PAGE_COVERAGE ((qword)ENTRIES * (qword)PAGE_SIZE)
-#define BASE_PAGE_TABLES_ADDRESS 0x1000000
+#define BASE_PAGE_TABLES_ADDRESS 0x02000000 // Page tables start at 32 MiB, Kernel loads at 64 KiB
 #define FLAGS 0b11 // PRESENT | RW (Read-Write)
 
 typedef struct 
@@ -72,6 +72,7 @@ dword pml4_table_physical = 0;
 
 void setup_page_tables() 
 {
+    print_string("Welcome to C (Protected Mode)!");
     print_string("Welcome to C (Protected Mode)!");
     print_string("Next stop: Long Mode (64-bit)...");
     print_string("Setting up page tables...");
