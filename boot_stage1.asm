@@ -44,7 +44,7 @@ DAP:
     dw 0x40             ; Count: Number of sectors to read (64 sectors - could be changed later on)
 
                         ; RAM address to write to is represented by (Segment * 16) + Offset
-    dw 0x7E00           ; Offset - 0x700 which is directly after 0x7C00
+    dw 0x7E00           ; Offset - 0x7E00 which is 0x200 (512 bytes) directly after 0x7C00
     dw 0x0000           ; Segment
 
     dq 0x00000001       ; Disk sector to read from, each sector is 512 bytes.
