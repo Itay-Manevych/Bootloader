@@ -55,7 +55,7 @@ void initliaze_pdt_table(PageTable* pdt)
         qword base = PAGE_COVERAGE * i;
         fill_identity_pt(pt, base);
     }
-    print_string("finished mapping virtual to physical addresses...");
+    print_string("finished mapping virtual to physical addresses...", 15);
 }
 
 void fill_identity_pt(PageTable* pt, qword base) 
@@ -72,10 +72,9 @@ dword pml4_table_physical = 0;
 
 void setup_page_tables() 
 {
-    print_string("Welcome to C (Protected Mode)!");
-    print_string("Welcome to C (Protected Mode)!");
-    print_string("Next stop: Long Mode (64-bit)...");
-    print_string("Setting up page tables...");
+    print_string("Welcome to C (Protected Mode)!", 12);
+    print_string("Next stop: Long Mode (64-bit)...", 13);
+    print_string("Setting up page tables...", 14);
     PageTable* pml4 = (PageTable*)alloc_table();
     PageTable* pdpt = (PageTable*)alloc_table();
     PageTable* pdt = (PageTable*)alloc_table();

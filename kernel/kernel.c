@@ -2,7 +2,7 @@
 
 void start_kernel()
 {
-    print_string("Kernel Loaded.");
+    print_string("Kernel Loaded.", 16);
     // Hang forever
     while(1);
 }

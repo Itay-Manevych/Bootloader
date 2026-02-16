@@ -13,9 +13,8 @@ void print_char(char c, int col, int row) {
     video[index + 1] = WHITE_ON_BLACK;
 }
 
-void print_string(const char* str) {
+void print_string(const char* str, int row) {
     int col = 0;
-    int row = previous_lines_used;
 
     while (*str) {
         print_char(*str, col, row);
