@@ -1,7 +1,7 @@
 # Bootloader
 Legacy BIOS bootloader
 
-The purpose of this project exists so I can understand what really happens when a PC boots, from the first 512 bytes the BIOS loads, through switching CPU modes, all the way to jumping into my own kernel. 
+The purpose of this project is to understand what really happens when a PC boots, from BIOS startup, all the way to jumping into my own kernel. 
 The long-term goal is to grow this into a minimal OS.
 
 ## What it does (current)
