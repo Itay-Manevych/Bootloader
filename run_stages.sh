@@ -4,7 +4,7 @@ set -euo pipefail
 BIN="./bin"
 OBJ="./object"
 EXEC="./exec"
-KOBJ="./kernel"          # you asked to put kernel.o here
+KOBJ="./kernel"
 
 rm -rf "$BIN" "$OBJ" "$EXEC"
 mkdir -p "$BIN" "$OBJ" "$EXEC" "$KOBJ"
