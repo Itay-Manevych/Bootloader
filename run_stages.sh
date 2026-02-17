@@ -69,6 +69,19 @@ echo "[*] stage1.bin: ${STAGE1_SIZE} bytes"
 echo "[*] Assembling stage2 into 32-bit object"
 nasm -f elf32 boot/boot_stage2.asm -o "$OBJ32/boot_stage2.o"
 
+echo "[*] Compiling mpaland printf into 32-bit freestanding object"
+clang --target=i386-elf -ffreestanding -m32 \
+  -fno-pic -fno-stack-protector -fno-builtin -nostdlib "${CINC[@]}" \
+  -DPRINTF_DISABLE_SUPPORT_LONG_LONG \
+  -c common/third-party/mpaland/printf.c \
+  -o "$OBJ32/mpaland_printf32.o"
+
+echo "[*] Compiling mpaland _putchar (VGA) into 32-bit freestanding object"
+clang --target=i386-elf -ffreestanding -m32 \
+  -fno-pic -fno-stack-protector -fno-builtin -nostdlib "${CINC[@]}" \
+  -c common/third-party/mpaland/putchar_vga.c \
+  -o "$OBJ32/mpaland_putchar32.o"
+
 echo "[*] Compiling page setup helper into 32-bit freestanding object"
 clang --target=i386-elf -ffreestanding -m32 \
   -fno-pic -fno-stack-protector -nostdlib "${CINC[@]}" \
@@ -86,6 +99,8 @@ ld.lld -m elf_i386 --image-base=0 -Ttext 0x7E00 -e stage2_entry \
   -o "$ELF32/stage2.elf" \
   "$OBJ32/boot_stage2.o" \
   "$OBJ32/boot_stage2_page_tables_setup.o" \
+  "$OBJ32/mpaland_printf32.o" \
+  "$OBJ32/mpaland_putchar32.o" \
   "$OBJ32/vga32.o"
 
 echo "[*] Converting the stage2 32-bit ELF into raw binary file"
@@ -110,6 +125,18 @@ echo "[*] stage2.bin: ${STAGE2_SIZE} bytes -> padded to ${STAGE2_BYTES} bytes"
 echo "[*] Assembling the kernel entry stub"
 nasm -f elf64 kernel/kernel_entry.asm -o "$OBJ64/kernel_entry.o"
 
+echo "[*] Compiling mpaland printf into 64-bit freestanding object"
+clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
+  -fno-pic -fno-stack-protector -fno-builtin -nostdlib "${CINC[@]}" \
+  -c common/third-party/mpaland/printf.c \
+  -o "$OBJ64/mpaland_printf64.o"
+
+echo "[*] Compiling mpaland _putchar (VGA) into 64-bit freestanding object"
+clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
+  -fno-pic -fno-stack-protector -fno-builtin -nostdlib "${CINC[@]}" \
+  -c common/third-party/mpaland/putchar_vga.c \
+  -o "$OBJ64/mpaland_putchar64.o"
+
 echo "[*] Compiling the kernel.c into 64-bit freestanding object"
 clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
   -fno-pic -fno-stack-protector -nostdlib "${CINC[@]}" \
@@ -125,8 +152,10 @@ clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
 echo "[*] Linking kernel entry, kernel object and vga driver into 64-bit ELF"
 ld.lld -m elf_x86_64 --image-base=0 -Ttext "$KERNEL_LOAD_ADDRESS" -e kernel_entry \
   -o "$ELF64/kernel.elf" \
-  "$OBJ64/kernel_entry.o" \
   "$OBJ64/kernel.o" \
+  "$OBJ64/kernel_entry.o" \
+  "$OBJ64/mpaland_printf64.o" \
+  "$OBJ64/mpaland_putchar64.o" \
   "$OBJ64/vga64.o"
 
 echo "[*] Converting the kernel 64-bit ELF into raw binary file"

@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "common/third-party/mpaland/printf.h"
 #include "drivers/vga/vga.h"
 #include "common/types.h"
 
@@ -55,7 +56,7 @@ void initliaze_pdt_table(PageTable* pdt)
         qword base = PAGE_COVERAGE * i;
         fill_identity_pt(pt, base);
     }
-    print_string("finished mapping virtual to physical addresses...", 15);
+    printf("Succesfully mapped the virtual addresses to physical addresses!");
 }
 
 void fill_identity_pt(PageTable* pt, qword base) 
@@ -72,9 +73,11 @@ dword pml4_table_physical = 0;
 
 void setup_page_tables() 
 {
-    print_string("Welcome to C (Protected Mode)!", 12);
-    print_string("Next stop: Long Mode (64-bit)...", 13);
-    print_string("Setting up page tables...", 14);
+    set_current_cursor(12, 0);
+    set_current_color(VGA_COLOR_SUCCESS);
+    printf("Welcome to Protected Mode!\n");
+    printf("Next stop: Long Mode (64-bit)...\n");
+    printf("Right now setting page tables...\n");
     PageTable* pml4 = (PageTable*)alloc_table();
     PageTable* pdpt = (PageTable*)alloc_table();
     PageTable* pdt = (PageTable*)alloc_table();
@@ -85,4 +88,5 @@ void setup_page_tables()
     initliaze_pdt_table(pdt);
 
     pml4_table_physical = (dword)(uintptr_t)pml4;
+    set_current_color(VGA_COLOR_DEFAULT);
 }

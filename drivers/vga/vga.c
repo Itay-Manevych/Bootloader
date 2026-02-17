@@ -1,25 +1,57 @@
 #include "vga.h"
+#include "common/types.h"
 
-#define VGA_BUFFER 0xB8000
-#define WHITE_ON_BLACK 0x05
-#define PREVIOUS_STAGES_LINES_USED 12
+static int row = 0;
+static int col = 0;
+static byte current_color = VGA_COLOR_DEFAULT;
+volatile word* vga_buffer = (volatile word*) VGA_BUFFER_ADDRESS; // each cell is 2 bytes
 
-int previous_lines_used = PREVIOUS_STAGES_LINES_USED;
-
-void print_char(char c, int col, int row) {
-    volatile char* video = (volatile char*)VGA_BUFFER;
-    int index = (row * 80 + col) * 2; // 2 bytes per char (char + color)
-    video[index] = c;
-    video[index + 1] = WHITE_ON_BLACK;
+void set_current_cursor(int r, int c) 
+{
+    row = r;
+    col = c;
 }
 
-void print_string(const char* str, int row) {
-    int col = 0;
+void set_current_color(byte color) 
+{
+    current_color = color;
+}
 
-    while (*str) {
-        print_char(*str, col, row);
-        col++;
-        str++;
+static void line_feed() 
+{
+    row++;
+    if (row >= VGA_HEIGHT) {
+        row = VGA_HEIGHT - 1; // TODO: Create scrolling, this is just temporary.
     }
-    previous_lines_used++;
+}
+
+static void carriage_return() 
+{
+    col = 0;
+}
+
+void vga_putc(char c) 
+{
+    if (c == '\n') 
+    {
+        line_feed();
+        carriage_return();
+        return;
+    }
+
+    if (c == '\r') 
+    {
+        carriage_return();
+        return;
+    }
+
+    if (col >= VGA_WIDTH) 
+    {
+        line_feed();
+        carriage_return();
+    }
+
+    int index = GET_FLAT_INDEX(row, col);
+    vga_buffer[index] = (current_color << 8) | c;
+    col++;
 }
