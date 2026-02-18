@@ -7,8 +7,10 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "common/third-party/mpaland/printf.h"
-#include "drivers/vga/vga.h"
 #include "common/types.h"
+#include "common/console/console.h"
+#include "common/log.h"
+#include "drivers/vga/vga-sink/vga-sink.h"
 
 #define MEMORY_SIZE 0x40000000 // 1GiB
 #define PAGE_SIZE 0x1000 // 4KiB
@@ -56,7 +58,7 @@ void initliaze_pdt_table(PageTable* pdt)
         qword base = PAGE_COVERAGE * i;
         fill_identity_pt(pt, base);
     }
-    vga_print_string("Succesfully mapped the virtual addresses to physical addresses!\n");
+    LOGOK("Succesfully mapped the virtual addresses to physical addresses!\n");
 }
 
 void fill_identity_pt(PageTable* pt, qword base) 
@@ -73,11 +75,11 @@ dword pml4_table_physical = 0;
 
 void setup_page_tables() 
 {
-    vga_sync_cursor_from_hw();
-    set_current_color(VGA_COLOR_SUCCESS);
-    vga_print_string("Welcome to Protected Mode!\n");
-    vga_print_string("Next stop: Long Mode (64-bit)...\n");
-    vga_print_string("Right now setting page tables...\n");
+    console_set_sink(&VGA_SINK);
+    console_init();
+    LOGOK("Welcome to Protected Mode!\n");
+    LOGI("Next stop: Long Mode (64-bit)...\n");
+    LOGI("Right now setting page tables...\n");
     PageTable* pml4 = (PageTable*)alloc_table();
     PageTable* pdpt = (PageTable*)alloc_table();
     PageTable* pdt = (PageTable*)alloc_table();
@@ -88,5 +90,4 @@ void setup_page_tables()
     initliaze_pdt_table(pdt);
 
     pml4_table_physical = (dword)(uintptr_t)pml4;
-    set_current_color(VGA_COLOR_DEFAULT);
 }

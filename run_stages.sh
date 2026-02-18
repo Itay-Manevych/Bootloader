@@ -76,11 +76,30 @@ clang --target=i386-elf -ffreestanding -m32 \
   -c common/third-party/mpaland/printf.c \
   -o "$OBJ32/mpaland_printf32.o"
 
-echo "[*] Compiling mpaland _putchar (VGA) into 32-bit freestanding object"
+echo "[*] Compiling mpaland _putchar (Console) into 32-bit freestanding object"
 clang --target=i386-elf -ffreestanding -m32 \
   -fno-pic -fno-stack-protector -fno-builtin -nostdlib "${CINC[@]}" \
-  -c common/third-party/mpaland/putchar_vga.c \
+  -c common/third-party/mpaland/putchar_console.c \
   -o "$OBJ32/mpaland_putchar32.o"
+
+echo "[*] Compiling console into 32-bit freestanding object"
+clang --target=i386-elf -ffreestanding -m32 \
+  -fno-pic -fno-stack-protector -fno-builtin -nostdlib "${CINC[@]}" \
+  -c common/console/console.c \
+  -o "$OBJ32/console32.o"
+
+echo "[*] Compiling the vga driver into 32-bit freestanding object"
+clang --target=i386-elf -ffreestanding -m32 \
+  -fno-pic -fno-stack-protector -nostdlib "${CINC[@]}" \
+  -c drivers/vga/vga.c \
+  -o "$OBJ32/vga32.o"
+
+echo "[*] Compiling vga-sink into 32-bit freestanding object"
+clang --target=i386-elf -ffreestanding -m32 \
+  -fno-pic -fno-stack-protector -fno-builtin -nostdlib "${CINC[@]}" \
+  -c drivers/vga/vga-sink/vga-sink.c \
+  -o "$OBJ32/vga_sink32.o"
+
 
 echo "[*] Compiling page setup helper into 32-bit freestanding object"
 clang --target=i386-elf -ffreestanding -m32 \
@@ -88,11 +107,6 @@ clang --target=i386-elf -ffreestanding -m32 \
   -c boot/boot_stage2_page_tables_setup.c \
   -o "$OBJ32/boot_stage2_page_tables_setup.o"
 
-echo "[*] Compiling the vga driver into 32-bit freestanding object"
-clang --target=i386-elf -ffreestanding -m32 \
-  -fno-pic -fno-stack-protector -nostdlib "${CINC[@]}" \
-  -c drivers/vga/vga.c \
-  -o "$OBJ32/vga32.o"
 
 echo "[*] Linking stage2 object, helper and vga driver into 32-bit ELF"
 ld.lld -m elf_i386 --image-base=0 -Ttext 0x7E00 -e stage2_entry \
@@ -101,7 +115,9 @@ ld.lld -m elf_i386 --image-base=0 -Ttext 0x7E00 -e stage2_entry \
   "$OBJ32/boot_stage2_page_tables_setup.o" \
   "$OBJ32/mpaland_printf32.o" \
   "$OBJ32/mpaland_putchar32.o" \
-  "$OBJ32/vga32.o"
+  "$OBJ32/vga32.o" \
+  "$OBJ32/vga_sink32.o" \
+  "$OBJ32/console32.o"
 
 echo "[*] Converting the stage2 32-bit ELF into raw binary file"
 llvm-objcopy -O binary "$ELF32/stage2.elf" "$BIN32/stage2.bin"
@@ -131,11 +147,29 @@ clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
   -c common/third-party/mpaland/printf.c \
   -o "$OBJ64/mpaland_printf64.o"
 
-echo "[*] Compiling mpaland _putchar (VGA) into 64-bit freestanding object"
+echo "[*] Compiling mpaland _putchar (Console) into 64-bit freestanding object"
 clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
   -fno-pic -fno-stack-protector -fno-builtin -nostdlib "${CINC[@]}" \
-  -c common/third-party/mpaland/putchar_vga.c \
+  -c common/third-party/mpaland/putchar_console.c \
   -o "$OBJ64/mpaland_putchar64.o"
+
+echo "[*] Compiling console into 64-bit freestanding object"
+clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
+  -fno-pic -fno-stack-protector -fno-builtin -nostdlib "${CINC[@]}" \
+  -c common/console/console.c \
+  -o "$OBJ64/console64.o"
+
+echo "[*] Compiling the vga driver into 64-bit freestanding object"
+clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
+  -fno-pic -fno-stack-protector -nostdlib "${CINC[@]}" \
+  -c drivers/vga/vga.c \
+  -o "$OBJ64/vga64.o"
+
+echo "[*] Compiling vga-sink into 64-bit freestanding object"
+clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
+  -fno-pic -fno-stack-protector -fno-builtin -nostdlib "${CINC[@]}" \
+  -c drivers/vga/vga-sink/vga-sink.c \
+  -o "$OBJ64/vga_sink64.o"
 
 echo "[*] Compiling the kernel.c into 64-bit freestanding object"
 clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
@@ -143,11 +177,6 @@ clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
   -c kernel/kernel.c \
   -o "$OBJ64/kernel.o"
 
-echo "[*] Compiling the vga driver into 64-bit freestanding object"
-clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
-  -fno-pic -fno-stack-protector -nostdlib "${CINC[@]}" \
-  -c drivers/vga/vga.c \
-  -o "$OBJ64/vga64.o"
 
 echo "[*] Linking kernel entry, kernel object and vga driver into 64-bit ELF"
 ld.lld -m elf_x86_64 --image-base=0 -Ttext "$KERNEL_LOAD_ADDRESS" -e kernel_entry \
@@ -156,7 +185,9 @@ ld.lld -m elf_x86_64 --image-base=0 -Ttext "$KERNEL_LOAD_ADDRESS" -e kernel_entr
   "$OBJ64/kernel_entry.o" \
   "$OBJ64/mpaland_printf64.o" \
   "$OBJ64/mpaland_putchar64.o" \
-  "$OBJ64/vga64.o"
+  "$OBJ64/vga64.o" \
+  "$OBJ64/vga_sink64.o" \
+  "$OBJ64/console64.o"
 
 echo "[*] Converting the kernel 64-bit ELF into raw binary file"
 llvm-objcopy -O binary "$ELF64/kernel.elf" "$BIN64/kernel.bin"

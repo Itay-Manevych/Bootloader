@@ -5,7 +5,7 @@
 static int row = 0;
 static int col = 0;
 static byte current_color = VGA_COLOR_DEFAULT;
-volatile word* vga_buffer = (volatile word*) VGA_BUFFER_ADDRESS; // each cell is 2 bytes
+static volatile word* const vga_buffer = (volatile word*) VGA_BUFFER_ADDRESS; // each cell is 2 bytes
 
 static word vga_get_cursor_pos_from_hw()
 {
@@ -31,7 +31,7 @@ static void vga_update_cursor_hw()
     outb(0x3D5, (byte)((pos >> 8) & 0xFF));
 }
 
-void set_current_cursor(int r, int c) 
+void vga_set_cursor(int r, int c) 
 {
     if (r < 0 || r >= VGA_HEIGHT || c < 0 || c >= VGA_WIDTH) 
     {
@@ -41,7 +41,7 @@ void set_current_cursor(int r, int c)
     col = c;
 }
 
-void set_current_color(byte color) 
+void vga_set_color(byte color) 
 {
     current_color = color;
 }
@@ -54,7 +54,7 @@ void vga_sync_cursor_from_hw()
         pos = 0;
     }
     
-    set_current_cursor(pos / VGA_WIDTH, pos % VGA_WIDTH);
+    vga_set_cursor(pos / VGA_WIDTH, pos % VGA_WIDTH);
 }
 
 static void line_feed() 
@@ -101,12 +101,12 @@ void vga_flush_cursor()
     vga_update_cursor_hw();
 }
 
-void vga_print_string(const char* str) 
+void vga_print_string(const char* string)
 {
-    while (str[0] != '\0') 
+    while (string[0] != '\0') 
     {
-        vga_putc(str[0]);
-        str++;    
+        vga_putc(string[0]);
+        string++;    
     }
     vga_flush_cursor();
 }
