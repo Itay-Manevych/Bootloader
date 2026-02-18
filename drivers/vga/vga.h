@@ -1,5 +1,4 @@
 #pragma once
-#include <stdint.h>
 #include "common/types.h"
 
 #define VGA_BUFFER_ADDRESS 0xB8000
