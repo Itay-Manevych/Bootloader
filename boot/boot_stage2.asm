@@ -142,7 +142,7 @@ preapre_long_mode:
     call setup_page_tables         ; Build the page tables in RAM
     
     mov eax, [pml4_table_physical]        ; Giving cr3 the physical address inside the RAM of PML4 Table
-    mov cr3, eax
+    mov cr3, eax                          ; The physical address of PML4 must stay less than 4GiB because stage2 loads it into CR3 using eax (which is only 32 bits)
 
     mov eax, cr4                ; Enabling PAE (Physical Address Extenstion) Paging, without it the paging structure would be wrong
     or  eax, (1 << 5)           ; PAE is the bit #5 (counting from 0)
