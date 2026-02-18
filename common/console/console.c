@@ -1,5 +1,4 @@
 #include "console.h"
-#include "drivers/vga/vga-sink/vga-sink.h"
 
 static const ConsoleSink* current_sink = 0;
 
