@@ -56,7 +56,7 @@ void initliaze_pdt_table(PageTable* pdt)
         qword base = PAGE_COVERAGE * i;
         fill_identity_pt(pt, base);
     }
-    printf("Succesfully mapped the virtual addresses to physical addresses!\n");
+    vga_print_string("Succesfully mapped the virtual addresses to physical addresses!\n");
 }
 
 void fill_identity_pt(PageTable* pt, qword base) 
@@ -75,9 +75,9 @@ void setup_page_tables()
 {
     vga_sync_cursor_from_hw();
     set_current_color(VGA_COLOR_SUCCESS);
-    printf("Welcome to Protected Mode!\n");
-    printf("Next stop: Long Mode (64-bit)...\n");
-    printf("Right now setting page tables...\n");
+    vga_print_string("Welcome to Protected Mode!\n");
+    vga_print_string("Next stop: Long Mode (64-bit)...\n");
+    vga_print_string("Right now setting page tables...\n");
     PageTable* pml4 = (PageTable*)alloc_table();
     PageTable* pdpt = (PageTable*)alloc_table();
     PageTable* pdt = (PageTable*)alloc_table();

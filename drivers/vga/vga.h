@@ -14,5 +14,7 @@ enum {
 };
 
 void vga_sync_cursor_from_hw();
+void vga_flush_cursor();
 void set_current_color(byte color);
 void vga_putc(char c);
+void vga_print_string(const char* vga_print_string);
