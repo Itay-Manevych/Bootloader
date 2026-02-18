@@ -1,10 +1,10 @@
 #include "vga.h"
 #include "common/types.h"
 #include "common/port-io/port-io.h"
-
+#include "common/console/console_colors.h"
 static int row = 0;
 static int col = 0;
-static byte current_color = VGA_COLOR_DEFAULT;
+static byte current_color = CONSOLE_COLOR_DEFAULT;
 static volatile word* const vga_buffer = (volatile word*) VGA_BUFFER_ADDRESS; // each cell is 2 bytes
 
 static word vga_get_cursor_pos_from_hw()
