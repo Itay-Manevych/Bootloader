@@ -3,7 +3,7 @@
 
 void start_kernel()
 {
-    set_current_cursor(16,0);
+    vga_sync_cursor_from_hw();
     printf("working?\n");
     // Hang forever
     while(1);
