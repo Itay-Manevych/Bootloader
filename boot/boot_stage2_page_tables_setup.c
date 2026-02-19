@@ -4,7 +4,6 @@
 // Since we are going to be in 64bit mode, each entry will be 8 bytes, so each page table will be 4KiB / 8 = 512 entries.
 // the table hierarchy are PML4T->PDPT->PDT->PT->Physical Memory
 
-#include <stdint.h>
 #include <stddef.h>
 #include "common/third-party/mpaland/printf.h"
 #include "common/types.h"

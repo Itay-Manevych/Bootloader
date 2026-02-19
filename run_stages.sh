@@ -171,12 +171,20 @@ clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
   -c drivers/vga/vga-sink/vga-sink.c \
   -o "$OBJ64/vga_sink64.o"
 
+echo "[*] Compiling the idt.c into 64-bit freestanding object"
+clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
+  -fno-pic -fno-stack-protector -nostdlib "${CINC[@]}" \
+  -c kernel/idt.c \
+  -o "$OBJ64/idt.o"
+
+echo "[*] assembling the isr_stub.asm into 64-bit freestanding object"
+nasm -f elf64 kernel/isr_stub.asm -o "$OBJ64/isr_stub.o"
+
 echo "[*] Compiling the kernel.c into 64-bit freestanding object"
 clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
   -fno-pic -fno-stack-protector -nostdlib "${CINC[@]}" \
   -c kernel/kernel.c \
   -o "$OBJ64/kernel.o"
-
 
 echo "[*] Linking kernel entry, kernel object and vga driver into 64-bit ELF"
 ld.lld -m elf_x86_64 --image-base=0 -Ttext "$KERNEL_LOAD_ADDRESS" -e kernel_entry \
@@ -187,7 +195,9 @@ ld.lld -m elf_x86_64 --image-base=0 -Ttext "$KERNEL_LOAD_ADDRESS" -e kernel_entr
   "$OBJ64/mpaland_putchar64.o" \
   "$OBJ64/vga64.o" \
   "$OBJ64/vga_sink64.o" \
-  "$OBJ64/console64.o"
+  "$OBJ64/console64.o" \
+  "$OBJ64/isr_stub.o" \
+  "$OBJ64/idt.o"
 
 echo "[*] Converting the kernel 64-bit ELF into raw binary file"
 llvm-objcopy -O binary "$ELF64/kernel.elf" "$BIN64/kernel.bin"

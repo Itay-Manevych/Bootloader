@@ -1,5 +1,7 @@
 #include "idt.h"
 #include "common/types.h"
+#include "common/panic.h"
+#include <stddef.h>
 
 #define IDT_TABLE_SIZE 256
 #define GDT_CODE64_SEGMENT_SELECTOR 0x18
@@ -35,28 +37,40 @@ void* memset_(void* address, int value, size_t length) // also in page tables se
     return address;
 }
 
-void set_gate(size_t vector, void* handler_address, byte flags)
+void idt_set_descriptor(size_t vector, void* handler_address, byte flags)
 {
     idt_table[vector] = (InterruptDescriptor){
         .address_low = (uintptr_t) handler_address & 0xFFFF,
         .address_mid =  ((uintptr_t) handler_address >> 16) & 0xFFFF,
         .address_high = ((uintptr_t) handler_address >> 32) & 0xFFFFFFFF,
-        .ist = (byte) 0,
+        .selector = (word) GDT_CODE64_SEGMENT_SELECTOR,
         .type_attributes = flags,
-        .selector = (word) GDT_CODE64_SEGMENT_SELECTOR
+        .ist = (byte) 0,
+        .zero = (dword) 0
     };
 }
+__attribute__((noreturn))
+void exception_handler(void);
+void exception_handler() {
+    PANIC("EXCEPTION!");
+    __asm__ volatile("cli");
+    for (;;) {
+        __asm__ volatile("hlt");
+    }
+}
 
-init_table()
+extern void* isr_stub_table[];
+
+void idt_init()
 {
     idt_ptr = (IdtPtr){
         .size = sizeof(idt_table) - 1,
-        .base_address = &idt_table[0]
+        .base_address = (qword)(uintptr_t)&idt_table[0]
     };
-    
     memset_(idt_table, 0, sizeof(idt_table));
 
-
-
-    
+    for (size_t vector = 0; vector < 32; vector++) {
+        idt_set_descriptor(vector, isr_stub_table[vector], 0x8E);
+    }
+    __asm__ volatile ("lidt %0" : : "m"(idt_ptr)); // load the new IDT
 }
