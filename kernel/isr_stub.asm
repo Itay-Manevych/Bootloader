@@ -1,11 +1,15 @@
 %macro isr_err_stub 1
 isr_stub_%+%1:
+    mov rdi, %1   ; The exception handler gets the interrupt vector, and the error code.
+    mov rsi, [rsp]  ; for exception interrupts, the cpu pushes an error code on the stack.
     call exception_handler
     iretq
 %endmacro
 
 %macro isr_no_err_stub 1
 isr_stub_%+%1:
+    mov rdi, %1   ; The exception handler gets the interrupt vector, and the error code.
+    xor rsi, rsi  ; if the interrupt is not an exception, then the error code is 0
     call exception_handler
     iretq
 %endmacro

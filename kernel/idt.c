@@ -26,6 +26,32 @@ typedef struct __attribute__((packed))
 InterruptDescriptor idt_table[IDT_TABLE_SIZE];
 IdtPtr idt_ptr;
 
+static const char* const exception_names[32] = {
+    "#DE",  // 0  Divide Error
+    "#DB",  // 1  Debug
+    "NMI",  // 2
+    "#BP",  // 3  Breakpoint
+    "#OF",  // 4  Overflow
+    "#BR",  // 5  Bound Range Exceeded
+    "#UD",  // 6  Invalid Opcode
+    "#NM",  // 7  Device Not Available
+    "#DF",  // 8  Double Fault
+    "CSO",  // 9  Coprocessor Segment Overrun (legacy)
+    "#TS",  // 10 Invalid TSS
+    "#NP",  // 11 Segment Not Present
+    "#SS",  // 12 Stack-Segment Fault
+    "#GP",  // 13 General Protection
+    "#PF",  // 14 Page Fault
+    "RES",  // 15 Reserved
+    "#MF",  // 16 x87 FP Exception
+    "#AC",  // 17 Alignment Check
+    "#MC",  // 18 Machine Check
+    "#XM",  // 19 SIMD FP Exception
+    "#VE",  // 20 Virtualization Exception
+    "#CP",  // 21 Control Protection Exception
+    "RES", "RES", "RES", "RES", "RES", "RES", "RES", "RES", "RES", "RES", // 22-31
+};
+
 void* memset_(void* address, int value, size_t length) // also in page tables setup, will move it later
 {
     byte* p = (byte*)address;
@@ -50,13 +76,10 @@ void idt_set_descriptor(size_t vector, void* handler_address, byte flags)
     };
 }
 __attribute__((noreturn))
-void exception_handler(void);
-void exception_handler() {
-    PANIC("EXCEPTION!");
-    __asm__ volatile("cli");
-    for (;;) {
-        __asm__ volatile("hlt");
-    }
+void exception_handler(qword vector, qword error_code);
+void exception_handler(qword vector, qword error_code) {
+    const char* name = (vector < 32) ? exception_names[vector] : "INT"; // if its >= 32 then its an interrupt, not an exception
+    PANICF("EXCEPTION %s (vec=%u) err=0x%x", name, vector, error_code);
 }
 
 extern void* isr_stub_table[];
