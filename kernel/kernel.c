@@ -8,6 +8,7 @@ void start_kernel()
     console_set_sink(&VGA_SINK);
     console_init();
     LOGOK("Made it to Long mode :)\n");
+
     // Hang forever
     while(1);
 }
