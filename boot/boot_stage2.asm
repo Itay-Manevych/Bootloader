@@ -44,7 +44,7 @@ error:
     jmp $               ; make qemu keep running
 
 ; real start after we actually loaded the kernel into memory!
-; the kernel bytes in ram are now 0x00100000
+; the kernel bytes in ram are now 0x00010000
 stage_2_start:
     mov si, msg_stage2
 
