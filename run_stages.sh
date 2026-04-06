@@ -88,6 +88,12 @@ clang --target=i386-elf -ffreestanding -m32 \
   -c common/console/console.c \
   -o "$OBJ32/console32.o"
 
+echo "[*] Compiling common/mem/mem.c into 32-bit freestanding object"
+clang --target=i386-elf -ffreestanding -m32 \
+  -fno-pic -fno-stack-protector -nostdlib "${CINC[@]}" \
+  -c common/mem/mem.c \
+  -o "$OBJ32/mem32.o"
+
 echo "[*] Compiling the vga driver into 32-bit freestanding object"
 clang --target=i386-elf -ffreestanding -m32 \
   -fno-pic -fno-stack-protector -nostdlib "${CINC[@]}" \
@@ -113,6 +119,7 @@ ld.lld -m elf_i386 --image-base=0 -Ttext 0x7E00 -e stage2_entry \
   -o "$ELF32/stage2.elf" \
   "$OBJ32/boot_stage2.o" \
   "$OBJ32/boot_stage2_page_tables_setup.o" \
+  "$OBJ32/mem32.o" \
   "$OBJ32/mpaland_printf32.o" \
   "$OBJ32/mpaland_putchar32.o" \
   "$OBJ32/vga32.o" \
@@ -159,6 +166,12 @@ clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
   -c common/console/console.c \
   -o "$OBJ64/console64.o"
 
+echo "[*] Compiling common/mem/mem.c into 64-bit freestanding object"
+clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
+  -fno-pic -fno-stack-protector -nostdlib "${CINC[@]}" \
+  -c common/mem/mem.c \
+  -o "$OBJ64/mem64.o"
+
 echo "[*] Compiling the vga driver into 64-bit freestanding object"
 clang --target=x86_64-elf -ffreestanding -m64 -mno-red-zone \
   -fno-pic -fno-stack-protector -nostdlib "${CINC[@]}" \
@@ -191,6 +204,7 @@ ld.lld -m elf_x86_64 --image-base=0 -Ttext "$KERNEL_LOAD_ADDRESS" -e kernel_entr
   -o "$ELF64/kernel.elf" \
   "$OBJ64/kernel.o" \
   "$OBJ64/kernel_entry.o" \
+  "$OBJ64/mem64.o" \
   "$OBJ64/mpaland_printf64.o" \
   "$OBJ64/mpaland_putchar64.o" \
   "$OBJ64/vga64.o" \

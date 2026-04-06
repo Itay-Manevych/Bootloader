@@ -5,6 +5,7 @@
 // the table hierarchy are PML4T->PDPT->PDT->PT->Physical Memory
 
 #include <stddef.h>
+#include "common/mem/mem.h"
 #include "common/third-party/mpaland/printf.h"
 #include "common/types.h"
 #include "common/console/console.h"
@@ -26,17 +27,6 @@ typedef struct
 qword next_free_address = BASE_PAGE_TABLES_ADDRESS;
 
 void fill_identity_pt(PageTable* pt, qword base);
-
-void* memset_(void* address, int value, size_t length) 
-{
-    byte* p = (byte*)address;
-    byte val = (byte)value;
-    for (size_t i = 0; i < length; i++) 
-    {
-        p[i] = val;
-    }
-    return address;
-}
 
 void* alloc_table() 
 {

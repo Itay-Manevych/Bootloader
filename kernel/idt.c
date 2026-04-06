@@ -1,5 +1,6 @@
 #include "idt.h"
 #include "common/types.h"
+#include "common/mem/mem.h"
 #include "common/panic.h"
 #include <stddef.h>
 
@@ -51,17 +52,6 @@ static const char* const exception_names[32] = {
     "#CP",  // 21 Control Protection Exception
     "RES", "RES", "RES", "RES", "RES", "RES", "RES", "RES", "RES", "RES", // 22-31
 };
-
-void* memset_(void* address, int value, size_t length) // also in page tables setup, will move it later
-{
-    byte* p = (byte*)address;
-    byte val = (byte)value;
-    for (size_t i = 0; i < length; i++) 
-    {
-        p[i] = val;
-    }
-    return address;
-}
 
 void idt_set_descriptor(size_t vector, void* handler_address, byte flags)
 {
