@@ -12,7 +12,7 @@ The long-term goal is to grow this into a minimal OS.
   - Sets up a GDT
   - Enables A20 Fast Gate
   - Switches to 32-bit protected mode
-  - Builds identity-mapped page tables (illustration can be found at identity_paging.md)
+  - Builds identity-mapped page tables (see `docs/identity_paging.md`)
   - Enables paging + long mode
   - Jumps to the kernel entry point
 - Kernel (64-bit)
@@ -36,3 +36,4 @@ Requirements:
 Run:
 ```bash
 ./run_stages.sh
+```
