@@ -11,15 +11,15 @@
 start:
 	jmp 0x0000:main			; The calculation in memory we have is CS:Offset, which does (CS * 16) + Offset.
 							; We already have ORG 0x7C00, which means we start at 0x7c00, and the Offset would grow incrementally
-							; Therfore, we want to zero initliaze CS (by far jumping)
+							; Therefore, we want to zero initialize CS (by far jumping)
 
 main:
 	xor ax, ax				; When we pass DAP we save it in SI, and SI is at DS:SI
-	mov ds, ax				; so we zero initliaze for the same reason we did in start 
+	mov ds, ax				; so we zero initialize for the same reason we did in start
 	mov es, ax
 	mov gs, ax
 	
-							; Initliaze stuff for the Stack:
+							; Initialize stuff for the Stack:
 	cli						; remove all interrupts as they push stuff into the stack and would cause undefined behaviour
 	mov ss, ax				; sp would be regarded at SS:SP
 	mov sp, 0x7C00

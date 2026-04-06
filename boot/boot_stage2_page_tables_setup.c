@@ -1,5 +1,5 @@
-// We map virtual memory to phyiscal memory. 
-// as of write now, 1GiB is enough memory to map for the boot process
+// We map virtual memory to physical memory.
+// As of right now, 1GiB is enough memory to map for the boot process
 // each page size is 4KiB, so we need 1GiB / 4KiB = 262144 pages to map the entire memory.
 // Since we are going to be in 64bit mode, each entry will be 8 bytes, so each page table will be 4KiB / 8 = 512 entries.
 // the table hierarchy are PML4T->PDPT->PDT->PT->Physical Memory
@@ -46,7 +46,7 @@ void* alloc_table()
     return t;
 }
 
-void initliaze_pdt_table(PageTable* pdt) 
+void initialize_pdt_table(PageTable* pdt) 
 {
     for (size_t i = 0; i < ENTRIES; i++) 
     {
@@ -86,7 +86,7 @@ void setup_page_tables()
     pml4->data[0] = (qword)(uintptr_t)pdpt | FLAGS;
     pdpt->data[0] = (qword)(uintptr_t)pdt | FLAGS;
 
-    initliaze_pdt_table(pdt);
+    initialize_pdt_table(pdt);
 
     pml4_table_physical = (qword)(uintptr_t)pml4;
 }
